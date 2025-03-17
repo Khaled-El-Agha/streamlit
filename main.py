@@ -9,20 +9,47 @@ if 'ssh_client' not in st.session_state:
 
 def ssh_connect(host, username, password):
     """Establish an SSH connection."""
+    # try:
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    client.connect(host, username=username, password=password)
+    client.connect(host, username=username, password=password, timeout=1)
     return client
+    # except paramiko.AuthenticationException:
+    #     st.error("Authentication failed. Please check your username and password.")
+    # except paramiko.SSHException as e:
+    #     st.error(f"SSH connection error: {e}")
+    # except Exception as e:
+    #     st.error(f"make sure that the target is on and fully booted: {e}")
 
 def execute_command(client, command):
     """Execute a command over SSH."""
-    stdin, stdout, stderr = client.exec_command(command)
-    return stdout.read().decode(), stderr.read().decode()
+    try:
+        if client is None:
+            st.error("Connection to target not established. Please connect first.")
+            st.stop()
+        
+        stdin, stdout, stderr = client.exec_command(command)
+        stdout.channel.recv_exit_status()
+        output_response = stdout.readlines()
+        error_response = stderr.readlines()
+        
+        if error_response:
+            st.error(f"Error executing command: {''.join(error_response)}")
+            st.stop()
+        
+        return output_response, error_response
+    except AttributeError as e:
+        st.error(f"Connection issue: {e}")
+        st.stop()
 
 def shutdown_device(client):
     """Shutdown STM32MP1."""
-    execute_command(client, 'shutdown -h now')
-    st.success("Shutdown command sent!")
+    _, error_response = execute_command(client, 'shutdown -h now')
+    if error_response:
+        st.error("Failed with Shutdown command: {error_response}")
+    else:
+        st.success("Shutdown command sent!")
+        
 
 def copy_images(client, usb_path, sd_path):
     """Copy images from USB to SD card and show progress."""
@@ -65,7 +92,7 @@ def main():
             st.session_state.ssh_client = ssh_connect(host, username, password)
             st.sidebar.success("Connected successfully!")
         except Exception as e:
-            st.sidebar.error(f"Connection failed: {str(e)}")
+            st.sidebar.error(f"Connection failed, make sure that the target is on and fully booted: {str(e)}")
     
     st.header("Device Controls")
     if st.button("Shutdown STM32MP1"):
