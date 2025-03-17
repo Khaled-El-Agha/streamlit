@@ -3,6 +3,10 @@ import paramiko
 import time
 import threading
 
+# Session State also supports attribute based syntax
+if 'ssh_client' not in st.session_state:
+    st.session_state.ssh_client = None
+
 def ssh_connect(host, username, password):
     """Establish an SSH connection."""
     client = paramiko.SSHClient()
@@ -58,33 +62,32 @@ def main():
     
     if st.sidebar.button("Connect"):
         try:
-            global ssh_client
-            ssh_client = ssh_connect(host, username, password)
+            st.session_state.ssh_client = ssh_connect(host, username, password)
             st.sidebar.success("Connected successfully!")
         except Exception as e:
             st.sidebar.error(f"Connection failed: {str(e)}")
     
     st.header("Device Controls")
     if st.button("Shutdown STM32MP1"):
-        shutdown_device(ssh_client)
+        shutdown_device(st.session_state.ssh_client)
     
     st.header("File Transfer")
-    usb_path = st.text_input("USB Path", "/media/usb/")
-    sd_path = st.text_input("SD Card Path", "/media/sdcard/")
+    # usb_path = st.text_input("USB Path", "/media/usb/")
+    # sd_path = st.text_input("SD Card Path", "/media/sdcard/")
     if st.button("Copy Images to SD Card"):
-        threading.Thread(target=copy_images, args=(ssh_client, usb_path, sd_path)).start()
+        threading.Thread(target=copy_images, args=(st.session_state.ssh_client, usb_path, sd_path)).start()
     
     st.header("M4 Core Control")
     if st.button("Start M4 Core"):
-        control_m4(ssh_client, "start")
+        control_m4(st.session_state.ssh_client, "start")
     if st.button("Stop M4 Core"):
-        control_m4(ssh_client, "stop")
+        control_m4(st.session_state.ssh_client, "stop")
     
     st.header("DrawEngine Control")
     if st.button("Start DrawEngine"):
-        control_drawengine(ssh_client, "start")
+        control_drawengine(st.session_state.ssh_client, "start")
     if st.button("Stop DrawEngine"):
-        control_drawengine(ssh_client, "stop")
+        control_drawengine(st.session_state.ssh_client, "stop")
     
 if __name__ == "__main__":
     main()
