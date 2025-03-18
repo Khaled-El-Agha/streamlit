@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STM32MP1 Control Panel</title>
+    <script src="/static/script.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+        button { padding: 10px 20px; font-size: 16px; margin: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <h1>STM32MP1 Control Panel</h1>
+
+    <button onclick="shutdown()">Shutdown STM32MP1</button>
+    <button onclick="copyImages()">Copy Images from USB</button>
+    <button onclick="startM4()">Start M4 Core</button>
+    <button onclick="stopM4()">Stop M4 Core</button>
+
+    <p id="status"></p>
+
+</body>
+</html>
